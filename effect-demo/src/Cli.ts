@@ -6,36 +6,36 @@ import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 
-// ===== OPZIONI GLOBALI =====
+// ===== GLOBAL OPTIONS =====
 const config = Options.text("config")
 const logfile = Options.text("logfile").pipe(Options.optional)
 
-// ===== COMANDO ROOT: uzu (senza subcommands) =====
-export const cliCommandWithoutSubcommands = Command.make(
+// ===== ROOT COMMAND: uzu =====
+export const rootCommand = Command.make(
   "uzu",
   { config, logfile },
-  () => Console.log("Usage: uzu primedata <update>")
+  () => Console.log("Usage: uzu data <update>")
 ).pipe(
   Command.withDescription("CLI demo - use --help for available commands")
 )
 
-// ===== SUBCOMMAND LIVELLO 1: primedata =====
-const primedataCommand = Command.make(
-  "primedata",
+// ===== SUBCOMMAND LEVEL 1: data =====
+const dataCommand = Command.make(
+  "data",
   {},
-  () => Console.log("Usage: uzu primedata update")
+  () => Console.log("Usage: uzu data update")
 ).pipe(
-  Command.withDescription("Manages primedata")
+  Command.withDescription("Manages data")
 )
 
-// ===== SUBCOMMAND LIVELLO 2: update =====
+// ===== SUBCOMMAND LEVEL 2: update =====
 const noPush = Options.boolean("no-push").pipe(Options.optional)
 
 const updateCommand = Command.make(
   "update",
   { noPush },
   (subcommandConfig: { noPush: Option.Option<boolean> }) =>
-    Effect.flatMap(cliCommandWithoutSubcommands, (parentConfig) =>
+    Effect.flatMap(rootCommand, (parentConfig) =>
       Effect.gen(function*() {
         const { config, logfile } = parentConfig
 
@@ -45,16 +45,16 @@ const updateCommand = Command.make(
         yield* Effect.logInfo(`No Push: ${Option.getOrElse(subcommandConfig.noPush, () => false)}`)
       }))
 ).pipe(
-  Command.withDescription("Updates primedata")
+  Command.withDescription("Updates data")
 )
 
-// ===== COMPOSIZIONE COMANDI =====
-const primedataWithUpdate = primedataCommand.pipe(
+// ===== COMMAND COMPOSITION =====
+const dataWithUpdate = dataCommand.pipe(
   Command.withSubcommands([updateCommand])
 )
 
-const command = cliCommandWithoutSubcommands.pipe(
-  Command.withSubcommands([primedataWithUpdate])
+const command = rootCommand.pipe(
+  Command.withSubcommands([dataWithUpdate])
 )
 
 export const run = Command.run(command, {
